@@ -1,0 +1,74 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.log
+*.tmp
+*.temp
+*.swp
+*.bak
+
+# Visual Studio
+.vs/
+.vscode/
+*.sln
+*.csproj.user
+*.suo
+*.user
+*.cache
+*.log
+*.tmp
+*.temp
+
+# Rider
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# NuGet
+packages/
+*.nupkg
+.nuget/
+
+# MongoDB data (if local)
+data/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Appsettings secrets
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json
+
+# Build outputs
+*.exe
+*.dll
+*.pdb
+*.exe.config
+*.dll.config
+
+# Test results
+TestResults/
+*.trx
+*.testsettings
+
+# Coverage
+*.coverage
+*.coveragexml
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
