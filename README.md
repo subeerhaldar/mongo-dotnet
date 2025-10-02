@@ -338,21 +338,34 @@ Update `appsettings.json`:
 
 ## Running the Project
 
+### Backend API
 1. **Start MongoDB**: Ensure MongoDB is running locally on port 27017 (default)
-2. **Update Configuration**: Modify `appsettings.json` if your MongoDB connection differs
-3. **Restore Dependencies**:
+2. **Navigate to API project**:
    ```bash
-   dotnet restore
+   cd /path/to/mongo-dotnet
    ```
-4. **Run the Application**:
+3. **Run the API**:
    ```bash
    dotnet run
    ```
-5. **Access APIs**:
+4. **Access APIs**:
    - Swagger UI: `https://localhost:5001/swagger`
-   - Health check: `https://localhost:5001/health` (if implemented)
+   - API endpoints: `https://localhost:5001/api/*`
 
-The application will automatically seed sample data on first run.
+The API will automatically seed large test dataset (1000+ products, 500+ users, 2000+ orders) on first run.
+
+### Frontend UI (Optional)
+1. **Navigate to UI project**:
+   ```bash
+   cd MongoGridUI
+   ```
+2. **Run the Blazor WebAssembly app**:
+   ```bash
+   dotnet run
+   ```
+3. **Access UI**: `https://localhost:5000` (or the port shown in terminal)
+
+The UI demonstrates data grid functionality and connects to the API backend.
 
 ## Sample Data
 

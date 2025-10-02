@@ -1,0 +1,28 @@
+@page "/categories"
+@inject CategoryService CategoryService
+
+<PageTitle>Categories</PageTitle>
+
+<h1>Categories</h1>
+
+<DataGrid Title="Categories" Items="categories" LoadData="LoadCategories">
+    <HeaderTemplate>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Description</th>
+    </HeaderTemplate>
+    <RowTemplate Context="category">
+        <td>@category.Id</td>
+        <td>@category.Name</td>
+        <td>@category.Description</td>
+    </RowTemplate>
+</DataGrid>
+
+@code {
+    private List<CategoryResponse>? categories;
+
+    private async Task LoadCategories()
+    {
+        categories = await CategoryService.GetAllAsync();
+    }
+}

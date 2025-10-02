@@ -1,0 +1,56 @@
+@typeparam TItem
+@inject CategoryService CategoryService
+
+<div class="card">
+    <div class="card-header">
+        <h5>@Title</h5>
+        <button class="btn btn-primary btn-sm" @onclick="LoadData">Refresh</button>
+    </div>
+    <div class="card-body">
+        @if (Items == null)
+        {
+            <div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        }
+        else if (!Items.Any())
+        {
+            <p class="text-muted">No items found.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            @HeaderTemplate
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Items)
+                        {
+                            <tr>
+                                @RowTemplate(item)
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Data Grid";
+    [Parameter] public List<TItem>? Items { get; set; }
+    [Parameter] public RenderFragment HeaderTemplate { get; set; } = null!;
+    [Parameter] public RenderFragment<TItem> RowTemplate { get; set; } = null!;
+    [Parameter] public EventCallback LoadData { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData.InvokeAsync();
+    }
+}
