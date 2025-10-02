@@ -1,0 +1,74 @@
+@typeparam TModel
+
+<div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5);" @onclick="CloseModal">
+    <div class="modal-dialog modal-lg" @onclick:stopPropagation="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@(IsEdit ? "Edit" : "Add") @EntityName</h5>
+                <button type="button" class="btn-close" @onclick="CloseModal"></button>
+            </div>
+
+            <EditForm Model="Model" OnValidSubmit="HandleValidSubmit" FormName="@FormName">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger" />
+
+                <div class="modal-body">
+                    @FormContent
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" disabled="@IsSubmitting">
+                        @if (IsSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            Saving...
+                        }
+                        else
+                        {
+                            <span>@(IsEdit ? "Update" : "Create")</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string EntityName { get; set; } = "Entity";
+    [Parameter] public string FormName { get; set; } = "crudForm";
+    [Parameter] public TModel Model { get; set; } = default!;
+    [Parameter] public RenderFragment FormContent { get; set; } = null!;
+    [Parameter] public bool IsEdit { get; set; } = false;
+    [Parameter] public EventCallback<TModel> OnSave { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private bool IsSubmitting = false;
+
+    private async Task HandleValidSubmit()
+    {
+        IsSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            await OnSave.InvokeAsync(Model);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving {EntityName}: {ex.Message}");
+            // Handle error - could show error message
+        }
+        finally
+        {
+            IsSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        await OnClose.InvokeAsync();
+    }
+}

@@ -11,6 +11,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:5001/") });
 
 // Register API services
-builder.Services.AddScoped<CategoryService>();
+builder.Services.AddScoped<MongoGridUI.Features.Categories.CategoryService>();
+builder.Services.AddScoped<MongoGridUI.Features.Products.ProductService>();
 
 await builder.Build().RunAsync();

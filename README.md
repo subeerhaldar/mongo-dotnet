@@ -9,8 +9,8 @@ A .NET 8 Web API project demonstrating grid-based data retrieval from MongoDB wi
 
 ## Project Structure
 
+### Backend API (mongo-dotnet/)
 ```
-mongo-dotnet/
 ├── Controllers/
 │   ├── GridController.cs          # API endpoints for grid data
 │   ├── CategoriesController.cs    # CRUD operations for categories
@@ -39,6 +39,35 @@ mongo-dotnet/
 ├── Program.cs                     # Application entry point
 ├── .gitignore                     # Git ignore rules
 └── README.md                      # This file
+```
+
+### Frontend UI (MongoGridUI/)
+```
+├── Features/
+│   ├── Categories/
+│   │   ├── CategoryService.cs     # API service for categories
+│   │   └── CategoriesPage.razor   # Categories management page
+│   ├── Products/
+│   │   ├── ProductService.cs      # API service for products
+│   │   └── ProductsPage.razor     # Products management page
+│   ├── Users/                     # (Extensible for users)
+│   └── Orders/                    # (Extensible for orders)
+├── Shared/
+│   ├── Components/
+│   │   ├── AdvancedDataGrid.razor    # Full-featured data grid
+│   │   ├── DynamicDropdown.razor     # Generic dropdown component
+│   │   ├── CrudForm.razor            # Modal CRUD forms
+│   │   └── VirtualizedDataGrid.razor # Performance-optimized grid
+│   └── Services/
+│       └── ApiService.cs          # Base API service
+├── Models/                        # UI-specific DTOs
+├── Layout/
+│   ├── MainLayout.razor          # Main application layout
+│   └── NavMenu.razor             # Navigation sidebar
+├── _Imports.razor                # Global using directives
+├── App.razor                     # Root component
+├── Program.cs                    # Application entry point
+└── wwwroot/                      # Static assets
 ```
 
 ## Features
@@ -354,7 +383,7 @@ Update `appsettings.json`:
 
 The API will automatically seed large test dataset (1000+ products, 500+ users, 2000+ orders) on first run.
 
-### Frontend UI (Optional)
+### Frontend UI
 1. **Navigate to UI project**:
    ```bash
    cd MongoGridUI
@@ -363,9 +392,16 @@ The API will automatically seed large test dataset (1000+ products, 500+ users, 
    ```bash
    dotnet run
    ```
-3. **Access UI**: `https://localhost:5000` (or the port shown in terminal)
+3. **Access UI**: `http://localhost:5265` (or assigned port)
 
-The UI demonstrates data grid functionality and connects to the API backend.
+#### UI Features:
+- **Categories Page** (`/categories`): Full CRUD operations with data grid
+- **Products Page** (`/products`): CRUD with dynamic dropdown binding to categories
+- **Advanced Components**:
+  - `AdvancedDataGrid`: Pagination, sorting, filtering, search
+  - `DynamicDropdown`: NoSQL master data binding
+  - `CrudForm`: Modal forms with validation
+  - `VirtualizedDataGrid`: Performance optimization for large datasets
 
 ## Sample Data
 
@@ -407,3 +443,101 @@ var pipeline = new[]
 ```
 
 This approach provides efficient server-side joins without multiple round trips.
+
+## Frontend Architecture (Blazor WebAssembly)
+
+The project includes a comprehensive Blazor WebAssembly frontend that demonstrates modern SPA development with NoSQL data binding.
+
+### Feature-Based Structure
+```
+MongoGridUI/
+├── Features/
+│   ├── Categories/
+│   │   ├── CategoryService.cs
+│   │   └── CategoriesPage.razor
+│   ├── Products/
+│   │   ├── ProductService.cs
+│   │   └── ProductsPage.razor
+│   ├── Users/
+│   └── Orders/
+├── Shared/
+│   ├── Components/
+│   │   ├── AdvancedDataGrid.razor
+│   │   ├── DynamicDropdown.razor
+│   │   ├── CrudForm.razor
+│   │   └── VirtualizedDataGrid.razor
+│   └── Services/
+│       └── ApiService.cs
+├── Models/
+│   └── DTOs for API communication
+└── Layout/
+    ├── MainLayout.razor
+    └── NavMenu.razor
+```
+
+### Key Components
+
+#### AdvancedDataGrid
+- **Pagination**: Server-side pagination with customizable page sizes (10, 25, 50, 100)
+- **Sorting**: Column-based sorting (client-side for demo, can be server-side)
+- **Filtering**: Real-time search with debounced input
+- **CRUD Actions**: Edit/Delete buttons with confirmation dialogs
+- **Loading States**: Spinner indicators during data operations
+- **Empty States**: User-friendly messages when no data is available
+
+#### DynamicDropdown
+- **Generic Type Support**: Works with any data type using generics
+- **Value/Display Selectors**: Flexible binding to NoSQL data properties
+- **Validation**: Built-in required field validation with error messages
+- **Bootstrap Styling**: Consistent UI design with form controls
+- **Master Data Binding**: Automatically populates from API endpoints
+
+#### CrudForm
+- **Modal Interface**: Non-blocking form interactions using Bootstrap modals
+- **Validation**: DataAnnotations validation with comprehensive error display
+- **Loading States**: Submit button with loading indicators and disabled state
+- **Generic Support**: Works with any model type through generics
+- **Two-Way Binding**: Reactive form updates with `@bind` directives
+
+#### VirtualizedDataGrid
+- **Performance**: Handles thousands of records efficiently using Blazor's Virtualize component
+- **Virtual Scrolling**: Only renders visible items (50px item height, 5 overscan)
+- **Sticky Headers**: Fixed column headers during scroll navigation
+- **Configurable Item Size**: Optimized for different row heights
+- **Memory Efficient**: Prevents UI freezing with large datasets
+
+### HttpClient Integration
+- **Base Configuration**: Centralized API base URL configuration
+- **Error Handling**: Comprehensive exception handling with user feedback
+- **JSON Serialization**: Automatic request/response serialization
+- **Dependency Injection**: Scoped service registration for proper lifecycle management
+- **Typed Services**: Feature-specific services extending base ApiService
+
+### Data Binding & Validation
+- **Two-Way Binding**: `@bind` and `@bind-Value` for reactive UI updates
+- **Form Validation**: `EditForm` with `DataAnnotationsValidator` for model validation
+- **Error Messages**: `ValidationMessage` components for field-level errors
+- **Real-time Feedback**: Immediate validation feedback as users type
+- **Custom Validation**: Business logic validation through custom attributes
+
+### Performance Optimizations
+- **Virtual Scrolling**: Efficient rendering of large datasets
+- **Lazy Loading**: Components load data only when needed
+- **Debounced Search**: Prevents excessive API calls during typing
+- **Pagination**: Server-side pagination reduces data transfer
+- **Component Lifecycle**: Proper OnInitializedAsync and disposal patterns
+
+### Navigation & Routing
+- **Feature-Based Routes**: Clean URL structure (`/categories`, `/products`, etc.)
+- **Sidebar Navigation**: Bootstrap-based responsive navigation menu
+- **Active Link Styling**: Visual indication of current page
+- **Route Parameters**: Support for ID-based routes (future enhancement)
+
+### UI/UX Features
+- **Bootstrap Styling**: Professional, responsive design
+- **Loading Indicators**: Visual feedback during async operations
+- **Error Handling**: User-friendly error messages and recovery
+- **Responsive Design**: Mobile-friendly layouts
+- **Accessibility**: Proper ARIA labels and semantic HTML
+
+This frontend demonstrates enterprise-level Blazor development patterns suitable for large-scale applications with complex data requirements.

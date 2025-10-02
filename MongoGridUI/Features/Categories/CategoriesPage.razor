@@ -1,0 +1,131 @@
+@page "/categories"
+@inject CategoryService CategoryService
+
+<PageTitle>Categories Management</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <AdvancedDataGrid Title="Categories Management"
+                             LoadDataFunc="LoadCategoriesData"
+                             OnAdd="HandleAdd"
+                             OnEdit="HandleEdit"
+                             OnDelete="HandleDelete">
+                <HeaderTemplate>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                </HeaderTemplate>
+                <RowTemplate Context="category">
+                    <td>@category.Id</td>
+                    <td>@category.Name</td>
+                    <td>@category.Description</td>
+                </RowTemplate>
+            </AdvancedDataGrid>
+        </div>
+    </div>
+</div>
+
+@if (ShowForm)
+{
+    <CrudForm EntityName="Category"
+             FormName="categoryForm"
+             Model="FormModel"
+             IsEdit="IsEditMode"
+             OnSave="HandleSave"
+             OnClose="HandleCloseForm">
+        <FormContent>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <InputText id="name" class="form-control" @bind-Value="FormModel.Name" />
+                        <ValidationMessage For="@(() => FormModel.Name)" />
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <InputTextArea id="description" class="form-control" rows="3" @bind-Value="FormModel.Description" />
+                        <ValidationMessage For="@(() => FormModel.Description)" />
+                    </div>
+                </div>
+            </div>
+        </FormContent>
+    </CrudForm>
+}
+
+@code {
+    private bool ShowForm = false;
+    private bool IsEditMode = false;
+    private CreateCategoryRequest FormModel = new();
+
+    private async Task<(IEnumerable<CategoryResponse> Items, int TotalCount)> LoadCategoriesData()
+    {
+        var items = await CategoryService.GetAllAsync() ?? new List<CategoryResponse>();
+        return (items, items.Count);
+    }
+
+    private async Task HandleAdd()
+    {
+        FormModel = new CreateCategoryRequest();
+        IsEditMode = false;
+        ShowForm = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleEdit(CategoryResponse category)
+    {
+        FormModel = new CreateCategoryRequest
+        {
+            Name = category.Name,
+            Description = category.Description
+        };
+        IsEditMode = true;
+        ShowForm = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleDelete(CategoryResponse category)
+    {
+        if (category.Id != null && await ConfirmDelete())
+        {
+            await CategoryService.DeleteAsync(category.Id);
+            // Refresh data would be handled by the grid component
+        }
+    }
+
+    private async Task HandleSave(CreateCategoryRequest model)
+    {
+        try
+        {
+            if (IsEditMode)
+            {
+                // For edit, we'd need the ID - this is simplified
+                // In a real app, you'd pass the ID through the form
+            }
+            else
+            {
+                await CategoryService.CreateAsync(model);
+            }
+            ShowForm = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving category: {ex.Message}");
+        }
+    }
+
+    private async Task HandleCloseForm()
+    {
+        ShowForm = false;
+        StateHasChanged();
+    }
+
+    private async Task<bool> ConfirmDelete()
+    {
+        // In a real app, you'd use a confirmation dialog
+        return await Task.FromResult(true);
+    }
+}

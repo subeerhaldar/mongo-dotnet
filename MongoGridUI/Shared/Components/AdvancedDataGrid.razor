@@ -1,0 +1,241 @@
+@typeparam TItem
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">@Title</h5>
+        <div class="d-flex gap-2">
+            <input type="text" class="form-control form-control-sm" style="width: 200px;"
+                   placeholder="Search..." @bind="SearchText" @bind:event="oninput" @onkeyup="HandleSearch" />
+            <button class="btn btn-outline-primary btn-sm" @onclick="RefreshData">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+            @if (ShowAddButton)
+            {
+                <button class="btn btn-primary btn-sm" @onclick="OnAddClick">
+                    <i class="bi bi-plus-circle"></i> Add New
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="card-body">
+        @if (IsLoading)
+        {
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <div class="mt-2">Loading data...</div>
+            </div>
+        }
+        else if (PagedItems == null || !PagedItems.Any())
+        {
+            <div class="text-center py-4">
+                <i class="bi bi-inbox-fill text-muted" style="font-size: 3rem;"></i>
+                <div class="mt-2 text-muted">No data found</div>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            @HeaderTemplate
+                            @if (ShowActions)
+                            {
+                                <th width="150">Actions</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in PagedItems)
+                        {
+                            <tr>
+                                @RowTemplate(item)
+                                @if (ShowActions)
+                                {
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-info" @onclick="() => OnEditClick(item)">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" @onclick="() => OnDeleteClick(item)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            @if (TotalPages > 1)
+            {
+                <nav aria-label="Data grid pagination" class="mt-3">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item @(CurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" href="#" @onclick="() => ChangePage(1)" aria-label="First">
+                                <span aria-hidden="true">&laquo;&laquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item @(CurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" href="#" @onclick="() => ChangePage(CurrentPage - 1)" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+
+                        @for (int i = Math.Max(1, CurrentPage - 2); i <= Math.Min(TotalPages, CurrentPage + 2); i++)
+                        {
+                            <li class="page-item @(i == CurrentPage ? "active" : "")">
+                                <a class="page-link" href="#" @onclick="() => ChangePage(i)">@i</a>
+                            </li>
+                        }
+
+                        <li class="page-item @(CurrentPage == TotalPages ? "disabled" : "")">
+                            <a class="page-link" href="#" @onclick="() => ChangePage(CurrentPage + 1)" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item @(CurrentPage == TotalPages ? "disabled" : "")">
+                            <a class="page-link" href="#" @onclick="() => ChangePage(TotalPages)" aria-label="Last">
+                                <span aria-hidden="true">&raquo;&raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+
+            <!-- Page Info -->
+            <div class="d-flex justify-content-between align-items-center mt-2 text-muted small">
+                <span>Showing @((CurrentPage - 1) * PageSize + 1) to @Math.Min(CurrentPage * PageSize, TotalCount) of @TotalCount entries</span>
+                <div class="d-flex align-items-center gap-2">
+                    <span>Show:</span>
+                    <select class="form-select form-select-sm" style="width: auto;" @bind="PageSize" @onchange="HandlePageSizeChange">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <span>entries</span>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Data Grid";
+    [Parameter] public RenderFragment HeaderTemplate { get; set; } = null!;
+    [Parameter] public RenderFragment<TItem> RowTemplate { get; set; } = null!;
+    [Parameter] public Func<Task<(IEnumerable<TItem> Items, int TotalCount)>> LoadDataFunc { get; set; } = null!;
+    [Parameter] public bool ShowActions { get; set; } = true;
+    [Parameter] public bool ShowAddButton { get; set; } = true;
+    [Parameter] public EventCallback<TItem> OnEdit { get; set; }
+    [Parameter] public EventCallback<TItem> OnDelete { get; set; }
+    [Parameter] public EventCallback OnAdd { get; set; }
+
+    private List<TItem> AllItems = new();
+    private List<TItem> FilteredItems = new();
+    private IEnumerable<TItem> PagedItems = new List<TItem>();
+    private bool IsLoading = true;
+    private string SearchText = "";
+    private int CurrentPage = 1;
+    private int PageSize = 10;
+    private int TotalCount = 0;
+    private int TotalPages => (int)Math.Ceiling((double)FilteredItems.Count / PageSize);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var (items, totalCount) = await LoadDataFunc();
+            AllItems = items.ToList();
+            TotalCount = totalCount;
+            ApplyFiltersAndPagination();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading data: {ex.Message}");
+            // Handle error - could show error message
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadData();
+    }
+
+    private void ApplyFiltersAndPagination()
+    {
+        // Apply search filter (basic implementation - can be enhanced)
+        if (string.IsNullOrWhiteSpace(SearchText))
+        {
+            FilteredItems = AllItems;
+        }
+        else
+        {
+            // This is a basic filter - in real implementation, you'd filter on the server side
+            FilteredItems = AllItems.Where(item => item?.ToString()?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) == true).ToList();
+        }
+
+        // Apply pagination
+        var skip = (CurrentPage - 1) * PageSize;
+        PagedItems = FilteredItems.Skip(skip).Take(PageSize);
+    }
+
+    private async Task HandleSearch()
+    {
+        CurrentPage = 1; // Reset to first page when searching
+        ApplyFiltersAndPagination();
+        StateHasChanged();
+    }
+
+    private async Task HandlePageSizeChange()
+    {
+        CurrentPage = 1; // Reset to first page when changing page size
+        ApplyFiltersAndPagination();
+        StateHasChanged();
+    }
+
+    private void ChangePage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            CurrentPage = page;
+            ApplyFiltersAndPagination();
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnAddClick()
+    {
+        await OnAdd.InvokeAsync();
+    }
+
+    private async Task OnEditClick(TItem item)
+    {
+        await OnEdit.InvokeAsync(item);
+    }
+
+    private async Task OnDeleteClick(TItem item)
+    {
+        await OnDelete.InvokeAsync(item);
+    }
+}

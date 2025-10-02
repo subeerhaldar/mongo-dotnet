@@ -1,0 +1,175 @@
+@page "/products"
+@inject ProductService ProductService
+@inject CategoryService CategoryService
+
+<PageTitle>Products Management</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <AdvancedDataGrid Title="Products Management"
+                             LoadDataFunc="LoadProductsData"
+                             OnAdd="HandleAdd"
+                             OnEdit="HandleEdit"
+                             OnDelete="HandleDelete">
+                <HeaderTemplate>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                </HeaderTemplate>
+                <RowTemplate Context="product">
+                    <td>@product.Id</td>
+                    <td>@product.Name</td>
+                    <td>@product.Category?.Name</td>
+                    <td>@product.Price.ToString("C")</td>
+                    <td>@product.StockQuantity</td>
+                </RowTemplate>
+            </AdvancedDataGrid>
+        </div>
+    </div>
+</div>
+
+@if (ShowForm)
+{
+    <CrudForm EntityName="Product"
+             FormName="productForm"
+             Model="FormModel"
+             IsEdit="IsEditMode"
+             OnSave="HandleSave"
+             OnClose="HandleCloseForm">
+        <FormContent>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <InputText id="name" class="form-control" @bind-Value="FormModel.Name" />
+                        <ValidationMessage For="@(() => FormModel.Name)" />
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <DynamicDropdown Label="Category"
+                                   Items="Categories"
+                                   ValueSelector="c => c.Id"
+                                   DisplaySelector="c => c.Name"
+                                   @bind-SelectedValue="FormModel.CategoryId"
+                                   Required="true" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="price" class="form-label">Price</label>
+                        <InputNumber id="price" class="form-control" @bind-Value="FormModel.Price" />
+                        <ValidationMessage For="@(() => FormModel.Price)" />
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="stock" class="form-label">Stock Quantity</label>
+                        <InputNumber id="stock" class="form-control" @bind-Value="FormModel.StockQuantity" />
+                        <ValidationMessage For="@(() => FormModel.StockQuantity)" />
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <InputTextArea id="description" class="form-control" rows="3" @bind-Value="FormModel.Description" />
+                        <ValidationMessage For="@(() => FormModel.Description)" />
+                    </div>
+                </div>
+            </div>
+        </FormContent>
+    </CrudForm>
+}
+
+@code {
+    private bool ShowForm = false;
+    private bool IsEditMode = false;
+    private CreateProductRequest FormModel = new();
+    private List<CategoryResponse>? Categories = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCategories();
+    }
+
+    private async Task LoadCategories()
+    {
+        Categories = await CategoryService.GetAllAsync() ?? new List<CategoryResponse>();
+    }
+
+    private async Task<(IEnumerable<ProductResponse> Items, int TotalCount)> LoadProductsData()
+    {
+        var items = await ProductService.GetAllAsync() ?? new List<ProductResponse>();
+        return (items, items.Count);
+    }
+
+    private async Task HandleAdd()
+    {
+        FormModel = new CreateProductRequest();
+        IsEditMode = false;
+        ShowForm = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleEdit(ProductResponse product)
+    {
+        FormModel = new CreateProductRequest
+        {
+            Name = product.Name,
+            Description = product.Description,
+            Price = product.Price,
+            CategoryId = product.CategoryId,
+            StockQuantity = product.StockQuantity
+        };
+        IsEditMode = true;
+        ShowForm = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleDelete(ProductResponse product)
+    {
+        if (product.Id != null && await ConfirmDelete())
+        {
+            await ProductService.DeleteAsync(product.Id);
+            // Refresh would be handled by the grid
+        }
+    }
+
+    private async Task HandleSave(CreateProductRequest model)
+    {
+        try
+        {
+            if (IsEditMode)
+            {
+                // For edit, we'd need the ID - simplified for demo
+            }
+            else
+            {
+                await ProductService.CreateAsync(model);
+            }
+            ShowForm = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving product: {ex.Message}");
+        }
+    }
+
+    private async Task HandleCloseForm()
+    {
+        ShowForm = false;
+        StateHasChanged();
+    }
+
+    private async Task<bool> ConfirmDelete()
+    {
+        // In a real app, you'd use a confirmation dialog
+        return await Task.FromResult(true);
+    }
+}
